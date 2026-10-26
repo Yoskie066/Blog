@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Manage your BlogSpace posts and account.">
+    <title>BlogSpace</title>
+
+    <link rel="stylesheet" href="../css/sidebar.css">
+    <link rel="stylesheet" href="../css/dashboard.css">
+
+    <script src="../js/sidebar.js" defer></script>
+    <script src="../js/dashboard.js" defer></script>
+</head>
+<body data-active-page="dashboard">
+
+    <!-- Sidebar -->
+    <div id="app-sidebar"></div>
+
+    <!-- Main Content -->
+    <main class="main-content dashboard-content">
+
+        <!-- Page Header -->
+        <header class="page-header">
+            <p class="page-eyebrow">
+                <span class="sparkle" aria-hidden="true">✦</span>
+                BLOGSPACE / OVERVIEW
+            </p>
+            <h1>Dashboard</h1>
+            <p class="page-description">
+                Manage your blog posts and keep your ideas organized.
+            </p>
+        </header>
+
+        <!-- Welcome Card -->
+        <section class="welcome-card">
+            <span class="welcome-label">
+                <span class="sparkle" aria-hidden="true">✦</span>
+                YOUR CREATIVE SPACE
+            </span>
+
+            <h2>
+                Welcome back, <span id="dashboard-user-name" class="gradient-text">Blogger</span>!
+            </h2>
+
+            <p>
+                Ready to share something new? Create a blog post
+                and let your ideas reach more people.
+            </p>
+
+            <a href="./create-blog.html" class="welcome-button">
+                Write a new blog
+                <span class="arrow" aria-hidden="true">→</span>
+            </a>
+        </section>
+
+        <!-- Recent Blogs -->
+        <section class="recent-section">
+
+            <div class="section-heading">
+                <h2>Recent Blogs</h2>
+                <p>Take a look at your latest blog posts.</p>
+            </div>
+
+            <div class="recent-blog-container" id="recent-blogs">
+
+                <div class="empty-state" id="empty-blogs">
+                    <div class="empty-state-icon" aria-hidden="true">✎</div>
+
+                    <h3>No blogs yet</h3>
+
+                    <p>
+                        Your blog posts will appear here after you create them.
+                    </p>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</body>
+</html>

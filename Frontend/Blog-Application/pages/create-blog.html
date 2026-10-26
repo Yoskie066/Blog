@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlogSpace</title>
+
+    <link rel="stylesheet" href="../css/sidebar.css">
+    <link rel="stylesheet" href="../css/create-blog.css">
+
+    <script src="../js/sidebar.js" defer></script>
+    <script src="../js/create-blog.js" defer></script>
+</head>
+
+<body data-active-page="create-blog">
+
+    <!-- Sidebar -->
+    <div id="app-sidebar"></div>
+
+    <!-- Main Content -->
+    <main class="main-content create-blog-content">
+
+        <header class="page-header">
+            <p class="page-eyebrow">
+                <span class="sparkle" aria-hidden="true">✦</span>
+                BLOGSPACE / CONTENT
+            </p>
+            <h1>Create Blog</h1>
+            <p class="page-description">
+                Write and share your ideas with the world.
+            </p>
+        </header>
+
+        <!-- Success or error message -->
+        <div id="form-message" class="form-message" role="status" aria-live="polite" hidden></div>
+
+        <!-- Create Blog Form -->
+        <form id="create-blog-form" class="blog-form">
+
+            <section class="form-card">
+
+                <div class="form-group">
+                    <label for="blog-title">
+                        Blog Title <span class="required">*</span>
+                    </label>
+
+                    <input
+                        type="text"
+                        id="blog-title"
+                        name="title"
+                        placeholder="Enter your blog title"
+                        maxlength="120"
+                        autocomplete="off"
+                        required
+                    >
+
+                    <small id="title-counter" class="field-counter">0 / 120 characters</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="blog-category">
+                        Category <span class="required">*</span>
+                    </label>
+
+                    <select id="blog-category" name="category" required>
+                        <option value="">Select a category</option>
+                        <option value="Technology">Technology</option>
+                        <option value="Business">Business</option>
+                        <option value="Education">Education</option>
+                        <option value="Health">Health</option>
+                        <option value="Food">Food</option>
+                        <option value="Travel">Travel</option>
+                        <option value="Lifestyle">Lifestyle</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Sports">Sports</option>
+                        <option value="Fashion">Fashion</option>
+                        <option value="Science">Science</option>
+                        <option value="Politics">Politics</option>
+                        <option value="Environment">Environment</option>
+                        <option value="Personal Stories">Personal Stories</option>
+                        <option value="Arts and Culture">Arts and Culture</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="blog-content">
+                        Blog Content <span class="required">*</span>
+                    </label>
+
+                    <textarea
+                        id="blog-content"
+                        name="content"
+                        rows="14"
+                        placeholder="Start writing your blog here..."
+                        required
+                    ></textarea>
+                </div>
+
+                <!-- COVER IMAGE (file upload) -->
+                <div class="form-group">
+                    <span class="field-label">
+                        Cover Image
+                        <span class="optional">(Optional)</span>
+                    </span>
+
+                    <!-- Hidden native file input -->
+                    <input
+                        type="file"
+                        id="blog-image"
+                        name="coverImage"
+                        accept="image/png, image/jpeg, image/jpg, image/gif, image/webp"
+                        class="hidden-file-input"
+                        hidden
+                    >
+
+                    <!-- Custom dropzone UI -->
+                    <label for="blog-image" class="file-dropzone" id="file-dropzone">
+                        <span class="file-dropzone-title" id="file-dropzone-title">
+                            Click to upload a cover image
+                        </span>
+                        <span class="file-dropzone-hint" id="file-dropzone-hint">
+                            PNG, JPG, GIF, or WebP — max 2MB
+                        </span>
+                    </label>
+
+                    <div id="image-preview-container" class="image-preview-container" hidden>
+                        <img id="image-preview" class="image-preview" alt="Cover image preview">
+                        <button
+                            type="button"
+                            id="remove-image"
+                            class="remove-image-btn"
+                            aria-label="Remove cover image"
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    <small>
+                        Upload a cover image for your blog post. Recommended size: 1200×630px.
+                    </small>
+                </div>
+
+            </section>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <a href="./dashboard.html" class="cancel-button">
+                    Cancel
+                </a>
+
+                <button type="submit" id="submit-button" class="submit-button">
+                    Save Blog
+                    <span class="arrow" aria-hidden="true">→</span>
+                </button>
+            </div>
+
+        </form>
+
+    </main>
+
+</body>
+
+</html>

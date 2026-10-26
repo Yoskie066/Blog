@@ -1,0 +1,467 @@
+/* =====================================
+   1. GLOBAL STYLES
+===================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --primary: #246bfe;
+    --purple: #8538ed;
+    --navy: #111d43;
+    --muted: #68799d;
+    --gradient: linear-gradient(115deg, #0879ff, #4b48ff 52%, #8735ef);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', Arial, sans-serif;
+    color: var(--navy);
+    background: #f7f9ff;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+::selection {
+    color: #ffffff;
+    background: #6254ef;
+}
+
+/* =====================================
+   2. LAYOUT
+===================================== */
+
+.dashboard-content {
+    min-height: 100vh;
+    padding: 60px 8% 80px;
+}
+
+/* =====================================
+   3. PAGE HEADER
+===================================== */
+
+.page-header {
+    margin-bottom: 38px;
+    animation: hero-entrance 0.7s ease both;
+}
+
+.page-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 10px 17px;
+    margin-bottom: 22px;
+    color: #1765f6;
+    background: linear-gradient(110deg, #deebff, #ece5ff);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    box-shadow: 0 5px 18px rgba(65, 107, 221, 0.06);
+}
+
+.sparkle {
+    font-size: 15px;
+    line-height: 1;
+    animation: sparkle 2.5s ease-in-out infinite;
+}
+
+.page-header h1 {
+    color: var(--navy);
+    font-size: clamp(32px, 4.5vw, 48px);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -1.8px;
+}
+
+.page-description {
+    margin-top: 14px;
+    max-width: 620px;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.8;
+}
+
+/* =====================================
+   4. WELCOME CARD (hero-style)
+===================================== */
+
+.welcome-card {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    padding: 48px 46px;
+    margin-bottom: 48px;
+    border: 1px solid #e5ecfd;
+    border-radius: 22px;
+    background:
+        radial-gradient(
+            ellipse at 12% 15%,
+            rgba(91, 164, 255, 0.20),
+            transparent 38%
+        ),
+        radial-gradient(
+            ellipse at 88% 78%,
+            rgba(172, 124, 255, 0.22),
+            transparent 40%
+        ),
+        linear-gradient(120deg, #f7fbff, #edf4ff 55%, #f7f1ff);
+    box-shadow: 0 15px 40px rgba(47, 92, 178, 0.08);
+    animation: hero-entrance 0.8s ease both;
+    animation-delay: 0.1s;
+}
+
+.welcome-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 10px 17px;
+    margin-bottom: 24px;
+    color: #1765f6;
+    background: linear-gradient(110deg, #deebff, #ece5ff);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    box-shadow: 0 5px 18px rgba(65, 107, 221, 0.08);
+}
+
+.welcome-card h2 {
+    color: var(--navy);
+    font-size: clamp(26px, 3.5vw, 40px);
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -1.4px;
+    margin-bottom: 14px;
+}
+
+#dashboard-user-name,
+.gradient-text {
+    color: #3861ff;
+    background: linear-gradient(100deg, #0879ff, #4b48ff 52%, #8c36ef);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+}
+
+.welcome-card > p {
+    max-width: 580px;
+    margin-bottom: 28px;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.9;
+}
+
+.welcome-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    padding: 16px 29px;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 700;
+    border: none;
+    border-radius: 50px;
+    background: var(--gradient);
+    box-shadow: 0 12px 27px rgba(54, 87, 245, 0.25);
+    text-decoration: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.welcome-button:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 17px 34px rgba(54, 87, 245, 0.34);
+}
+
+.welcome-button .arrow {
+    font-size: 21px;
+    line-height: 1;
+    transition: transform 0.3s ease;
+}
+
+.welcome-button:hover .arrow {
+    transform: translateX(5px);
+}
+
+/* =====================================
+   5. RECENT BLOGS SECTION
+===================================== */
+
+.recent-section {
+    animation: hero-entrance 0.8s ease both;
+    animation-delay: 0.2s;
+}
+
+.section-heading {
+    margin-bottom: 28px;
+}
+
+.section-heading h2 {
+    color: var(--navy);
+    font-size: clamp(24px, 3vw, 32px);
+    font-weight: 800;
+    line-height: 1.25;
+    letter-spacing: -1px;
+}
+
+.section-heading p {
+    margin-top: 8px;
+    max-width: 560px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.recent-blog-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* =====================================
+   6. BLOG ITEM (feature-card style)
+===================================== */
+
+.blog-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 24px 26px;
+    background: #ffffff;
+    border: 1px solid #edf1ff;
+    border-radius: 17px;
+    box-shadow: 0 8px 25px rgba(47, 92, 178, 0.06);
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease,
+        border-color 0.3s ease;
+    animation: hero-entrance 0.6s ease both;
+}
+
+.blog-item:hover {
+    transform: translateY(-6px);
+    border-color: #d7e3ff;
+    box-shadow: 0 18px 38px rgba(47, 92, 178, 0.12);
+}
+
+.blog-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.blog-item h3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: 8px;
+    color: var(--navy);
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: -0.3px;
+}
+
+.blog-meta {
+    margin-bottom: 10px;
+    color: #9aa9c8;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    line-height: 1.4;
+}
+
+.blog-preview {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 13.5px;
+    line-height: 1.75;
+}
+
+.blog-status {
+    flex-shrink: 0;
+    padding: 6px 13px;
+    border-radius: 50px;
+    background: #ddf8ef;
+    color: #0caf91;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: capitalize;
+    white-space: nowrap;
+}
+
+.blog-status.draft {
+    background: #fff0dc;
+    color: #f59b21;
+}
+
+/* =====================================
+   7. EMPTY STATE
+===================================== */
+
+.empty-state {
+    padding: 70px 24px;
+    text-align: center;
+    background: linear-gradient(180deg, #fbfdff, #f6f9ff);
+    border: 2px dashed #d7e3ff;
+    border-radius: 17px;
+    animation: hero-entrance 0.6s ease both;
+}
+
+.empty-state-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 68px;
+    height: 68px;
+    margin-bottom: 20px;
+    border-radius: 20px;
+    background: linear-gradient(110deg, #deebff, #ece5ff);
+    color: var(--primary);
+    font-size: 30px;
+    font-weight: 700;
+}
+
+.empty-state h3 {
+    margin-bottom: 10px;
+    color: var(--navy);
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -0.4px;
+}
+
+.empty-state p {
+    max-width: 400px;
+    margin: 0 auto;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.75;
+}
+
+/* =====================================
+   8. ANIMATIONS 
+===================================== */
+
+@keyframes hero-entrance {
+    from {
+        opacity: 0;
+        transform: translateY(22px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes sparkle {
+    0%,
+    100% {
+        opacity: 0.65;
+        transform: scale(0.9);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.15);
+    }
+}
+
+/* =====================================
+   9. RESPONSIVE
+===================================== */
+
+@media (max-width: 900px) {
+    .dashboard-content {
+        padding: 50px 5% 70px;
+    }
+
+    .welcome-card {
+        padding: 40px 32px;
+    }
+}
+
+@media (max-width: 700px) {
+    .dashboard-content {
+        padding: 275px 5% 40px;
+    }
+
+    .page-header {
+        margin-bottom: 30px;
+    }
+
+    .page-header h1 {
+        letter-spacing: -1.2px;
+    }
+
+    .welcome-card {
+        padding: 32px 24px;
+        border-radius: 18px;
+        margin-bottom: 38px;
+    }
+
+    .welcome-card > p {
+        font-size: 14px;
+    }
+
+    .welcome-button {
+        width: 100%;
+        padding: 15px 22px;
+    }
+
+    .blog-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+        padding: 20px 22px;
+    }
+
+    .blog-status {
+        align-self: flex-start;
+    }
+
+    .empty-state {
+        padding: 56px 20px;
+    }
+}
+
+@media (max-width: 360px) {
+    .page-header h1 {
+        letter-spacing: -0.8px;
+    }
+
+    .welcome-card h2 {
+        letter-spacing: -0.8px;
+    }
+}
+
+/* =====================================
+   10. REDUCED MOTION
+===================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

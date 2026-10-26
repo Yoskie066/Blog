@@ -1,0 +1,601 @@
+/* =====================================
+   1. GLOBAL STYLES
+===================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+    --primary: #246bfe;
+    --purple: #8538ed;
+    --navy: #111d43;
+    --muted: #68799d;
+    --gradient: linear-gradient(115deg, #0879ff, #4b48ff 52%, #8735ef);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', Arial, sans-serif;
+    color: var(--navy);
+    background: #f7f9ff;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+::selection {
+    color: #ffffff;
+    background: #6254ef;
+}
+
+/* =====================================
+   2. LAYOUT
+===================================== */
+
+.create-blog-content {
+    min-height: 100vh;
+    padding: 60px 8% 80px;
+    max-width: 1500px;
+}
+
+/* =====================================
+   3. PAGE HEADER
+===================================== */
+
+.page-header {
+    margin-bottom: 38px;
+    animation: hero-entrance 0.7s ease both;
+}
+
+.page-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 10px 17px;
+    margin-bottom: 22px;
+    color: #1765f6;
+    background: linear-gradient(110deg, #deebff, #ece5ff);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: 50px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    box-shadow: 0 5px 18px rgba(65, 107, 221, 0.06);
+}
+
+.sparkle {
+    font-size: 15px;
+    line-height: 1;
+    animation: sparkle 2.5s ease-in-out infinite;
+}
+
+.page-header h1 {
+    color: var(--navy);
+    font-size: clamp(32px, 4.5vw, 48px);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -1.8px;
+}
+
+.page-description {
+    margin-top: 14px;
+    max-width: 620px;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.8;
+}
+
+/* =====================================
+   4. FORM CARD
+===================================== */
+
+.blog-form {
+    width: 100%;
+    max-width: 1000px;
+    animation: hero-entrance 0.8s ease both;
+    animation-delay: 0.1s;
+}
+
+.form-card {
+    padding: 36px;
+    background: #ffffff;
+    border: 1px solid #edf1ff;
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(47, 92, 178, 0.06);
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.form-card:focus-within {
+    border-color: #d7e3ff;
+    box-shadow: 0 18px 38px rgba(47, 92, 178, 0.10);
+}
+
+/* =====================================
+   5. INPUT FIELDS
+===================================== */
+
+.form-group {
+    margin-bottom: 26px;
+}
+
+.form-group:last-child {
+    margin-bottom: 0;
+}
+
+.form-group label,
+.form-group .field-label {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--navy);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+.form-group label .required,
+.form-group .field-label .required {
+    color: #e11d48;
+    font-weight: 700;
+}
+
+.form-group label .optional,
+.form-group .field-label .optional {
+    color: #9aa9c8;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    display: block;
+    width: 100%;
+    padding: 14px 16px;
+    border: 1.5px solid #e5ecf8;
+    border-radius: 12px;
+    outline: none;
+    background: #fbfdff;
+    color: var(--navy);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    transition:
+        border-color 0.25s ease,
+        box-shadow 0.25s ease,
+        background 0.25s ease;
+}
+
+.form-group input,
+.form-group select {
+    min-height: 50px;
+}
+
+.form-group textarea {
+    min-height: 300px;
+    line-height: 1.8;
+    resize: vertical;
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+    color: #a9b7d3;
+}
+
+.form-group input:hover,
+.form-group select:hover,
+.form-group textarea:hover {
+    border-color: #d7e3ff;
+    background: #ffffff;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    border-color: #6254ef;
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(98, 84, 239, 0.12);
+}
+
+.form-group small {
+    display: block;
+    margin-top: 9px;
+    color: #9aa9c8;
+    font-size: 11.5px;
+    line-height: 1.6;
+    letter-spacing: 0.1px;
+}
+
+/* Character counter */
+.form-group .field-counter {
+    margin-top: 8px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+}
+
+/* =====================================
+   6. HIDDEN FILE INPUT
+===================================== */
+
+.hidden-file-input,
+#blog-image,
+.file-dropzone input[type="file"] {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    position: absolute !important;
+    left: -9999px !important;
+}
+
+/* =====================================
+   7. FILE UPLOAD DROPZONE
+===================================== */
+
+.file-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    min-height: 140px; 
+    padding: 32px 24px;
+    border: 2px dashed #d7e3ff;
+    border-radius: 14px;
+    background: #fbfdff;
+    text-align: center;
+    cursor: pointer;
+    user-select: none;
+    transition:
+        border-color 0.25s ease,
+        background 0.25s ease,
+        transform 0.2s ease;
+}
+
+.file-dropzone:hover {
+    border-color: #6254ef;
+    background: #f5f7ff;
+}
+
+.file-dropzone.dragover {
+    border-color: #6254ef;
+    background: #eff3ff;
+    transform: scale(1.01);
+}
+
+/* When a file has been selected */
+.file-dropzone.has-image {
+    min-height: 80px;
+    padding: 20px;
+    border-style: solid;
+    border-color: #d7e3ff;
+    background: #f5f7ff;
+}
+
+/* Title - Naka-center */
+.file-dropzone-title {
+    display: block;
+    width: 100%;
+    color: var(--navy);
+    font-size: 13px; 
+    font-weight: 700;
+    letter-spacing: 0.1px;
+    text-align: center;
+}
+
+/* Hint - Naka-center */
+.file-dropzone-hint {
+    display: block;
+    width: 100%;
+    color: #9aa9c8;
+    font-size: 11px; 
+    font-weight: 500;
+    text-align: center;
+}
+
+.file-dropzone.has-image .file-dropzone-hint {
+    display: none;
+}
+
+/* =====================================
+   8. IMAGE PREVIEW
+===================================== */
+
+.image-preview-container {
+    position: relative;
+    margin-top: 16px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1.5px solid #e5ecf8;
+    background: #f5f7ff;
+    box-shadow: 0 8px 22px rgba(47, 92, 178, 0.08);
+    animation: hero-entrance 0.4s ease both;
+}
+
+.image-preview {
+    display: block;
+    width: 100%;
+    max-height: 340px;
+    object-fit: cover;
+}
+
+.remove-image-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(17, 29, 67, 0.72);
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.remove-image-btn:hover {
+    background: #e11d48;
+    transform: scale(1.08);
+}
+
+/* =====================================
+   9. FORM ACTIONS
+===================================== */
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 14px;
+    margin-top: 30px;
+    animation: hero-entrance 0.8s ease both;
+    animation-delay: 0.2s;
+}
+
+.cancel-button,
+.submit-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 50px;
+    padding: 0 28px;
+    border: none;
+    border-radius: 50px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+        transform 0.3s ease,
+        box-shadow 0.3s ease,
+        background 0.3s ease,
+        border-color 0.3s ease;
+}
+
+.cancel-button {
+    background: #ffffff;
+    color: var(--muted);
+    border: 1.5px solid #e0e9f8;
+    box-shadow: 0 4px 12px rgba(47, 92, 178, 0.04);
+}
+
+.cancel-button:hover {
+    background: #f7f9ff;
+    color: var(--navy);
+    border-color: #d7e3ff;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(47, 92, 178, 0.08);
+}
+
+.submit-button {
+    background: var(--gradient);
+    color: #ffffff;
+    box-shadow: 0 12px 27px rgba(54, 87, 245, 0.25);
+}
+
+.submit-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 17px 34px rgba(54, 87, 245, 0.34);
+}
+
+.submit-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.65;
+    transform: none;
+    box-shadow: 0 6px 16px rgba(54, 87, 245, 0.15);
+}
+
+.submit-button .arrow {
+    font-size: 20px;
+    line-height: 1;
+    transition: transform 0.3s ease;
+}
+
+.submit-button:hover .arrow {
+    transform: translateX(5px);
+}
+
+.submit-button:disabled .arrow {
+    transform: none;
+}
+
+/* =====================================
+   10. SUCCESS AND ERROR MESSAGES
+===================================== */
+
+.form-message {
+    width: 100%;
+    max-width: 1000px;
+    margin-bottom: 22px;
+    padding: 15px 20px;
+    border-radius: 12px;
+    font-size: 13.5px;
+    font-weight: 500;
+    line-height: 1.65;
+    animation: hero-entrance 0.4s ease both;
+}
+
+.form-message.success {
+    border: 1px solid #b7f0d8;
+    background: #eafaf1;
+    color: #0c8b5e;
+}
+
+.form-message.error {
+    border: 1px solid #fecaca;
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+/* =====================================
+   11. ANIMATIONS
+===================================== */
+
+@keyframes hero-entrance {
+    from {
+        opacity: 0;
+        transform: translateY(22px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes sparkle {
+    0%,
+    100% {
+        opacity: 0.65;
+        transform: scale(0.9);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.15);
+    }
+}
+
+/* =====================================
+   12. RESPONSIVE
+===================================== */
+
+@media (max-width: 900px) {
+    .create-blog-content {
+        padding: 50px 5% 70px;
+    }
+
+    .form-card {
+        padding: 28px;
+        border-radius: 17px;
+    }
+}
+
+@media (max-width: 700px) {
+    .create-blog-content {
+        padding: 275px 5% 40px;
+    }
+
+    .page-header {
+        margin-bottom: 30px;
+    }
+
+    .page-header h1 {
+        letter-spacing: -1.2px;
+    }
+
+    .form-card {
+        padding: 24px 20px;
+        border-radius: 16px;
+    }
+
+    .form-group {
+        margin-bottom: 22px;
+    }
+
+    .form-group textarea {
+        min-height: 220px;
+    }
+
+    .file-dropzone {
+        min-height: 120px;
+        padding: 26px 16px;
+    }
+
+    .file-dropzone.has-image {
+        min-height: 70px;
+        padding: 16px;
+    }
+
+    .image-preview {
+        max-height: 240px;
+    }
+
+    .form-actions {
+        flex-direction: column-reverse;
+        align-items: stretch;
+        gap: 12px;
+        margin-top: 24px;
+    }
+
+    .cancel-button,
+    .submit-button {
+        width: 100%;
+    }
+
+    .form-message {
+        font-size: 13px;
+        padding: 14px 16px;
+    }
+}
+
+@media (max-width: 360px) {
+    .page-header h1 {
+        letter-spacing: -0.8px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        padding: 12px 14px;
+        font-size: 13.5px;
+    }
+}
+
+/* =====================================
+   13. REDUCED MOTION
+===================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
