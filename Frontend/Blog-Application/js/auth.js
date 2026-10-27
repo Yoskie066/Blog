@@ -1,70 +1,17 @@
 
 /* =====================================
    BlogSpace Authentication
-   Frontend demo using localStorage
+   Connected to Express Backend
 ===================================== */
 
-const USERS_KEY = "blogspace_users";
+const API_URL = "http://localhost:3000/api/auth";
 
-// Show messages through alert
 function showMessage(message) {
     alert(message);
 }
 
-// Get registered users
-function getUsers() {
-    try {
-        const data = localStorage.getItem(USERS_KEY);
-        const users = data ? JSON.parse(data) : {};
-
-        if (
-            !users ||
-            typeof users !== "object" ||
-            Array.isArray(users)
-        ) {
-            return {};
-        }
-
-        return users;
-    } catch (error) {
-        showMessage("Unable to read saved accounts.");
-        return {};
-    }
-}
-
-// Save registered users
-function saveUsers(users) {
-    try {
-        localStorage.setItem(USERS_KEY, JSON.stringify(users));
-        return true;
-    } catch (error) {
-        showMessage("Unable to save account. Please check your browser storage.");
-        return false;
-    }
-}
-
-// Normalize email
 function normalizeEmail(email) {
     return email.trim().toLowerCase();
-}
-
-// Hash password for this demo
-async function hashPassword(password) {
-    if (!window.crypto || !window.crypto.subtle) {
-        throw new Error(
-            "Password hashing is unavailable. Please open the project using localhost or HTTPS."
-        );
-    }
-
-    const encodedPassword = new TextEncoder().encode(password);
-    const hashBuffer = await window.crypto.subtle.digest(
-        "SHA-256",
-        encodedPassword
-    );
-
-    return Array.from(new Uint8Array(hashBuffer))
-        .map(byte => byte.toString(16).padStart(2, "0"))
-        .join("");
 }
 
 // =====================================
@@ -74,67 +21,68 @@ async function hashPassword(password) {
 const registerForm = document.querySelector("#register-form");
 
 if (registerForm) {
-    registerForm.addEventListener("submit", async function (event) {
+    registerForm.addEventListener("submit", async (event) => {
         event.preventDefault();
 
-        const emailInput = document.querySelector("#email");
-        const passwordInput = document.querySelector("#password");
-        const confirmPasswordInput =
-            document.querySelector("#confirm-password");
+        const email = normalizeEmail(
+            registerForm.querySelector("#email").value
+        );
+        const password = registerForm.querySelector("#password").value;
+        const confirmPassword = registerForm.querySelector(
+            "#confirm-password"
+        ).value;
 
-        if (!emailInput || !passwordInput || !confirmPasswordInput) {
-            showMessage("Registration form fields are missing.");
-            return;
-        }
+        const button = registerForm.querySelector(
+            'button[type="submit"]'
+        );
 
-        const email = normalizeEmail(emailInput.value);
-        const password = passwordInput.value;
-        const confirmPassword = confirmPasswordInput.value;
-
-        // Check matching passwords
         if (password !== confirmPassword) {
-            showMessage("Passwords do not match. Please try again.");
-            confirmPasswordInput.focus();
+            showMessage("Passwords do not match.");
             return;
         }
 
-        // Check password length
         if (password.length < 8) {
-            showMessage("Password must be at least 8 characters long.");
-            passwordInput.focus();
+            showMessage("Password must be at least 8 characters.");
             return;
         }
 
-        const users = getUsers();
-
-        // Check existing email
-        if (users[email]) {
-            showMessage(
-                "This email is already registered. Please log in."
-            );
-            return;
-        }
+        button.disabled = true;
 
         try {
-            const passwordHash = await hashPassword(password);
+            const response = await fetch(`${API_URL}/register`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    email,
+                    password,
+                    confirmPassword
+                })
+            });
 
-            users[email] = {
-                email: email,
-                passwordHash: passwordHash
-            };
+            const data = await response.json();
 
-            if (!saveUsers(users)) {
+            if (!response.ok) {
+                showMessage(data.message || "Registration failed.");
                 return;
             }
 
-            showMessage("Registration successful! You can now log in.");
-
-            // Register page is inside the pages folder
-            window.location.href = "login.html";
-        } catch (error) {
             showMessage(
-                error.message || "Registration failed. Please try again."
+                data.message ||
+                "Registration successful! Please log in."
             );
+
+            window.location.href = "login.html";
+
+        } catch (error) {
+            console.error("Registration error:", error);
+
+            showMessage(
+                "Unable to connect to the backend. Check if the server is running."
+            );
+        } finally {
+            button.disabled = false;
         }
     });
 }
@@ -146,57 +94,66 @@ if (registerForm) {
 const loginForm = document.querySelector("#login-form");
 
 if (loginForm) {
-    loginForm.addEventListener("submit", async function (event) {
+    loginForm.addEventListener("submit", async (event) => {
         event.preventDefault();
 
-        const emailInput = document.querySelector("#email");
-        const passwordInput = document.querySelector("#password");
+        const email = normalizeEmail(
+            loginForm.querySelector("#email").value
+        );
+        const password = loginForm.querySelector("#password").value;
 
-        if (!emailInput || !passwordInput) {
-            showMessage("Login form fields are missing.");
-            return;
-        }
+        const button = loginForm.querySelector(
+            'button[type="submit"]'
+        );
 
-        const email = normalizeEmail(emailInput.value);
-        const password = passwordInput.value;
-
-        const users = getUsers();
-        const user = users[email];
-
-        // Check if account exists
-        if (!user) {
-            showMessage("Account not found. Please register first.");
-            window.location.href = "register.html";
-            return;
-        }
+        button.disabled = true;
 
         try {
-            const passwordHash = await hashPassword(password);
+            const response = await fetch(`${API_URL}/login`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    email,
+                    password
+                })
+            });
 
-            // Check password
-            if (passwordHash !== user.passwordHash) {
-                showMessage("Incorrect password. Please try again.");
-                passwordInput.focus();
+            const data = await response.json();
+
+            // Login failed
+            if (!response.ok) {
+                showMessage(data.message || "Login failed.");
                 return;
             }
 
+            // Validate server response
+            if (!data.token || !data.user) {
+                showMessage(
+                    "The server did not return a valid login response."
+                );
+                return;
+            }
+
+            // Save login session
+            sessionStorage.setItem("token", data.token);
+            sessionStorage.setItem("user", JSON.stringify(data.user));
+
+            // Confirm successful login
             showMessage("Login successful! Welcome to BlogSpace.");
 
-            // Save the email of the logged-in user
-            localStorage.setItem(
-                "blogspace_current_user",
-                JSON.stringify({
-                    email: user.email
-                })
-            );
-
-            // Redirect to the project dashboard
-            window.location.href = "../pages/dashboard.html";
+            // Redirect to dashboard after the alert is closed
+            window.location.href = "dashboard.html";
 
         } catch (error) {
+            console.error("Login error:", error);
+
             showMessage(
-                error.message || "Login failed. Please try again."
+                "Unable to connect to the backend. Check if the server is running."
             );
+        } finally {
+            button.disabled = false;
         }
     });
 }
