@@ -1,7 +1,21 @@
+
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import { supabase } from "../config/supabase.js";
+
+import {
+    findUserByEmail,
+    findUserById,
+    createUser
+} from "../models/userModel.js";
+
+import {
+    createRefreshToken,
+    findRefreshToken,
+    revokeRefreshTokenById,
+    revokeRefreshToken
+} from "../models/refreshTokenModel.js";
+
 
 // =====================================
 // TOKEN CONFIGURATION
@@ -17,6 +31,21 @@ const REFRESH_TOKEN_COOKIE = "refreshToken";
 
 const REFRESH_TOKEN_MAX_AGE =
     7 * 24 * 60 * 60 * 1000;
+
+
+// =====================================
+// JWT SECRET VALIDATION
+// =====================================
+
+const validateJWTSecrets = () => {
+    if (
+        !process.env.JWT_ACCESS_SECRET ||
+        !process.env.JWT_REFRESH_SECRET
+    ) {
+        throw new Error("JWT secrets are not configured.");
+    }
+};
+
 
 // =====================================
 // TOKEN HELPERS
@@ -35,10 +64,11 @@ const generateAccessToken = (user) => {
     );
 };
 
+
 const generateRefreshToken = (user) => {
     const jti = crypto.randomUUID();
 
-    const token = jwt.sign(
+    return jwt.sign(
         {
             userId: user.id,
             jti
@@ -48,9 +78,8 @@ const generateRefreshToken = (user) => {
             expiresIn: REFRESH_TOKEN_EXPIRES_IN
         }
     );
-
-    return token;
 };
+
 
 const hashRefreshToken = (token) => {
     return crypto
@@ -58,6 +87,7 @@ const hashRefreshToken = (token) => {
         .update(token)
         .digest("hex");
 };
+
 
 // =====================================
 // REFRESH TOKEN COOKIE
@@ -73,6 +103,7 @@ const setRefreshTokenCookie = (res, token) => {
     });
 };
 
+
 const clearRefreshTokenCookie = (res) => {
     res.clearCookie(REFRESH_TOKEN_COOKIE, {
         httpOnly: true,
@@ -81,6 +112,7 @@ const clearRefreshTokenCookie = (res) => {
         path: "/api/auth"
     });
 };
+
 
 // =====================================
 // SAVE REFRESH TOKEN
@@ -93,18 +125,17 @@ const saveRefreshToken = async (user, token) => {
         Date.now() + REFRESH_TOKEN_MAX_AGE
     ).toISOString();
 
-    const { error } = await supabase
-        .from("refresh_tokens")
-        .insert({
-            user_id: user.id,
-            token_hash: tokenHash,
-            expires_at: expiresAt
-        });
+    const { error } = await createRefreshToken(
+        user.id,
+        tokenHash,
+        expiresAt
+    );
 
     if (error) {
         throw error;
     }
 };
+
 
 // =====================================
 // REGISTER
@@ -112,17 +143,27 @@ const saveRefreshToken = async (user, token) => {
 
 export const register = async (req, res) => {
     try {
-        const { email, password, confirmPassword } = req.body;
+        const { email, password, confirmPassword } = req.body || {};
 
-        if (!email || !password || !confirmPassword) {
+        // Validate required fields
+        if (
+            typeof email !== "string" ||
+            typeof password !== "string" ||
+            typeof confirmPassword !== "string" ||
+            !email.trim() ||
+            !password ||
+            !confirmPassword
+        ) {
             return res.status(400).json({
                 success: false,
                 message: "All fields are required."
             });
         }
 
+        // Normalize email
         const normalizedEmail = email.trim().toLowerCase();
 
+        // Validate email
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
             return res.status(400).json({
                 success: false,
@@ -130,6 +171,7 @@ export const register = async (req, res) => {
             });
         }
 
+        // Validate password length
         if (password.length < 8) {
             return res.status(400).json({
                 success: false,
@@ -137,6 +179,7 @@ export const register = async (req, res) => {
             });
         }
 
+        // Confirm password
         if (password !== confirmPassword) {
             return res.status(400).json({
                 success: false,
@@ -145,15 +188,13 @@ export const register = async (req, res) => {
         }
 
         // Check existing account
-        const { data: existingUser, error: searchError } =
-            await supabase
-                .from("users")
-                .select("id")
-                .eq("email", normalizedEmail)
-                .maybeSingle();
+        const {
+            data: existingUser,
+            error: searchError
+        } = await findUserByEmail(normalizedEmail);
 
         if (searchError) {
-            console.error(searchError);
+            console.error("Find user error:", searchError);
 
             return res.status(500).json({
                 success: false,
@@ -172,17 +213,17 @@ export const register = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Create user
-        const { data: newUser, error: insertError } =
-            await supabase
-                .from("users")
-                .insert({
-                    email: normalizedEmail,
-                    password_hash: hashedPassword
-                })
-                .select("id, email, created_at")
-                .single();
+        const {
+            data: newUser,
+            error: insertError
+        } = await createUser(
+            normalizedEmail,
+            hashedPassword
+        );
 
         if (insertError) {
+
+            // Duplicate email
             if (insertError.code === "23505") {
                 return res.status(409).json({
                     success: false,
@@ -190,7 +231,7 @@ export const register = async (req, res) => {
                 });
             }
 
-            console.error(insertError);
+            console.error("Create user error:", insertError);
 
             return res.status(500).json({
                 success: false,
@@ -214,32 +255,39 @@ export const register = async (req, res) => {
     }
 };
 
+
 // =====================================
 // LOGIN
 // =====================================
 
 export const login = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password } = req.body || {};
 
-        if (!email || !password) {
+        // Validate required fields
+        if (
+            typeof email !== "string" ||
+            typeof password !== "string" ||
+            !email.trim() ||
+            !password
+        ) {
             return res.status(400).json({
                 success: false,
                 message: "Email and password are required."
             });
         }
 
+        // Normalize email
         const normalizedEmail = email.trim().toLowerCase();
 
         // Find user
-        const { data: user, error } = await supabase
-            .from("users")
-            .select("id, email, password_hash")
-            .eq("email", normalizedEmail)
-            .maybeSingle();
+        const {
+            data: user,
+            error
+        } = await findUserByEmail(normalizedEmail);
 
         if (error) {
-            console.error(error);
+            console.error("Find user error:", error);
 
             return res.status(500).json({
                 success: false,
@@ -267,13 +315,8 @@ export const login = async (req, res) => {
             });
         }
 
-        // Check secrets
-        if (
-            !process.env.JWT_ACCESS_SECRET ||
-            !process.env.JWT_REFRESH_SECRET
-        ) {
-            throw new Error("JWT secrets are not configured.");
-        }
+        // Validate JWT secrets
+        validateJWTSecrets();
 
         // Generate tokens
         const accessToken = generateAccessToken(user);
@@ -305,14 +348,19 @@ export const login = async (req, res) => {
     }
 };
 
+
 // =====================================
 // REFRESH ACCESS TOKEN
 // =====================================
 
 export const refresh = async (req, res) => {
     try {
-        const oldRefreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE];
+        validateJWTSecrets();
 
+        const oldRefreshToken =
+            req.cookies?.[REFRESH_TOKEN_COOKIE];
+
+        // Check refresh token cookie
         if (!oldRefreshToken) {
             return res.status(401).json({
                 success: false,
@@ -328,6 +376,7 @@ export const refresh = async (req, res) => {
                 oldRefreshToken,
                 process.env.JWT_REFRESH_SECRET
             );
+
         } catch (error) {
             clearRefreshTokenCookie(res);
 
@@ -337,20 +386,17 @@ export const refresh = async (req, res) => {
             });
         }
 
-        // Hash old token
+        // Hash old refresh token
         const oldTokenHash = hashRefreshToken(oldRefreshToken);
 
-        // Check database record
-        const { data: storedToken, error } = await supabase
-            .from("refresh_tokens")
-            .select("id, user_id, expires_at, revoked_at")
-            .eq("token_hash", oldTokenHash)
-            .is("revoked_at", null)
-            .gt("expires_at", new Date().toISOString())
-            .maybeSingle();
+        // Find stored refresh token
+        const {
+            data: storedToken,
+            error
+        } = await findRefreshToken(oldTokenHash);
 
         if (error) {
-            console.error(error);
+            console.error("Find refresh token error:", error);
 
             return res.status(500).json({
                 success: false,
@@ -358,7 +404,11 @@ export const refresh = async (req, res) => {
             });
         }
 
-        if (!storedToken || storedToken.user_id !== decoded.userId) {
+        // Validate stored token
+        if (
+            !storedToken ||
+            storedToken.user_id !== decoded.userId
+        ) {
             clearRefreshTokenCookie(res);
 
             return res.status(401).json({
@@ -367,14 +417,22 @@ export const refresh = async (req, res) => {
             });
         }
 
-        // Get user
-        const { data: user, error: userError } = await supabase
-            .from("users")
-            .select("id, email")
-            .eq("id", decoded.userId)
-            .maybeSingle();
+        // Find user
+        const {
+            data: user,
+            error: userError
+        } = await findUserById(decoded.userId);
 
-        if (userError || !user) {
+        if (userError) {
+            console.error("Find user error:", userError);
+
+            return res.status(500).json({
+                success: false,
+                message: "Unable to retrieve user account."
+            });
+        }
+
+        if (!user) {
             clearRefreshTokenCookie(res);
 
             return res.status(401).json({
@@ -384,18 +442,13 @@ export const refresh = async (req, res) => {
         }
 
         // Revoke old refresh token
-        const { data: revokedToken, error: revokeError } = await supabase
-            .from("refresh_tokens")
-            .update({
-                revoked_at: new Date().toISOString()
-            })
-            .eq("id", storedToken.id)
-            .is("revoked_at", null)
-            .select("id")
-            .maybeSingle();
+        const {
+            data: revokedToken,
+            error: revokeError
+        } = await revokeRefreshTokenById(storedToken.id);
 
         if (revokeError) {
-            console.error(revokeError);
+            console.error("Revoke refresh token error:", revokeError);
 
             return res.status(500).json({
                 success: false,
@@ -419,7 +472,7 @@ export const refresh = async (req, res) => {
         // Save new refresh token
         await saveRefreshToken(user, newRefreshToken);
 
-        // Set new cookie
+        // Set new refresh token cookie
         setRefreshTokenCookie(res, newRefreshToken);
 
         return res.status(200).json({
@@ -438,56 +491,63 @@ export const refresh = async (req, res) => {
     }
 };
 
+
 // =====================================
 // LOGOUT
 // =====================================
 
 export const logout = async (req, res) => {
     try {
-        const refreshToken = req.cookies?.[REFRESH_TOKEN_COOKIE];
+        validateJWTSecrets();
+
+        const refreshToken =
+            req.cookies?.[REFRESH_TOKEN_COOKIE];
 
         if (refreshToken) {
+
+            // Verify refresh token
             try {
                 jwt.verify(
                     refreshToken,
                     process.env.JWT_REFRESH_SECRET
                 );
 
-                const tokenHash = hashRefreshToken(refreshToken);
-
-                const { error } = await supabase
-                    .from("refresh_tokens")
-                    .update({
-                        revoked_at: new Date().toISOString()
-                    })
-                    .eq("token_hash", tokenHash)
-                    .is("revoked_at", null);
-
-                if (error) {
-                    console.error(error);
-
-                    return res.status(500).json({
-                        success: false,
-                        message: "Unable to complete logout."
-                    });
-                }
-
             } catch (error) {
-                // Invalid or expired token:
-                // Clear the browser cookie anyway.
-                if (error.code !== "JsonWebTokenError" &&
-                    error.name !== "TokenExpiredError" &&
-                    error.name !== "NotBeforeError") {
-                    console.error(error);
 
-                    return res.status(500).json({
-                        success: false,
-                        message: "Unable to complete logout."
+                // Invalid or expired token
+                if (
+                    error.name === "JsonWebTokenError" ||
+                    error.name === "TokenExpiredError" ||
+                    error.name === "NotBeforeError"
+                ) {
+                    clearRefreshTokenCookie(res);
+
+                    return res.status(200).json({
+                        success: true,
+                        message: "Logged out successfully."
                     });
                 }
+
+                throw error;
+            }
+
+            // Hash refresh token
+            const tokenHash = hashRefreshToken(refreshToken);
+
+            // Revoke refresh token
+            const { error } = await revokeRefreshToken(tokenHash);
+
+            if (error) {
+                console.error("Revoke refresh token error:", error);
+
+                return res.status(500).json({
+                    success: false,
+                    message: "Unable to complete logout."
+                });
             }
         }
 
+        // Clear cookie
         clearRefreshTokenCookie(res);
 
         return res.status(200).json({

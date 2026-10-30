@@ -8,7 +8,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const savedUser = sessionStorage.getItem("user");
 
-    // Check logged-in user.
     if (!savedUser) {
         sessionStorage.removeItem("accessToken");
         window.location.replace(LOGIN_URL);
@@ -37,12 +36,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
-    // Display user's email.
     if (userNameElement) {
         userNameElement.textContent = currentUser.email;
     }
 
-    // Create an HTML element safely.
+    let blogs = [];
+
+    // Create HTML elements safely.
     function createElement(tag, className, text) {
         const element = document.createElement(tag);
 
@@ -74,8 +74,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    // Get a valid access token and fetch user's blogs.
-    async function fetchMyBlogs() {
+    // Get a valid access token.
+    async function getAccessToken() {
         let token = sessionStorage.getItem("accessToken");
 
         if (!token) {
@@ -90,15 +90,32 @@ document.addEventListener("DOMContentLoaded", async () => {
             token = sessionStorage.getItem("accessToken");
         }
 
-        let response = await fetch(`${API_URL}/my`, {
-            method: "GET",
+        if (!token) {
+            throw new Error("Unable to obtain an access token.");
+        }
+
+        return token;
+    }
+
+    // Send authenticated API requests.
+    async function apiRequest(url, options = {}) {
+        let token = await getAccessToken();
+
+        const makeRequest = () => fetch(url, {
+            ...options,
             headers: {
+                ...(options.body ? {
+                    "Content-Type": "application/json"
+                } : {}),
+                ...options.headers,
                 "Authorization": `Bearer ${token}`
             },
             credentials: "include"
         });
 
-        // Refresh and retry if access token expired.
+        let response = await makeRequest();
+
+        // Refresh expired access token and retry once.
         if (response.status === 401) {
             const refreshed = await window.refreshAccessToken?.();
 
@@ -110,31 +127,39 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             token = sessionStorage.getItem("accessToken");
 
-            response = await fetch(`${API_URL}/my`, {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${token}`
-                },
-                credentials: "include"
-            });
+            if (!token) {
+                throw new Error("Unable to refresh your session.");
+            }
+
+            response = await makeRequest();
         }
 
         const data = await response.json().catch(() => ({}));
 
-        if (!response.ok || !data.success) {
-            throw new Error(data.message || "Unable to load your blogs.");
+        if (!response.ok || data.success === false) {
+            throw new Error(
+                data.message || "Something went wrong. Please try again."
+            );
         }
+
+        return data;
+    }
+
+    // Load logged-in user's blogs.
+    async function fetchMyBlogs() {
+        const data = await apiRequest(`${API_URL}/my`);
 
         return data.blogs || [];
     }
 
-    // Create blog preview modal.
+    // Preview modal.
     function createPreviewModal() {
         const overlay = createElement("div", "blog-preview-overlay");
         overlay.id = "blog-preview-overlay";
         overlay.setAttribute("aria-hidden", "true");
 
         const modal = createElement("div", "blog-preview-modal");
+
         modal.setAttribute("role", "dialog");
         modal.setAttribute("aria-modal", "true");
         modal.setAttribute("aria-labelledby", "preview-blog-title");
@@ -167,15 +192,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         const details = createElement("div", "blog-preview-details");
 
-        const category = createElement(
-            "span",
-            "blog-preview-category"
-        );
-
+        const category = createElement("span", "blog-preview-category");
         const title = createElement("h2", "blog-preview-title");
-        title.id = "preview-blog-title";
-
         const date = createElement("p", "blog-preview-date");
+
+        title.id = "preview-blog-title";
 
         const divider = document.createElement("div");
         divider.className = "blog-preview-divider";
@@ -184,9 +205,30 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         details.append(category, title, date, divider, content);
         body.append(image, details);
-        modal.append(header, body);
-        overlay.appendChild(modal);
 
+        // Preview action buttons.
+        const actions = createElement("div", "blog-preview-actions");
+
+        const updateButton = createElement(
+            "button",
+            "blog-update-button",
+            "Update Blog"
+        );
+
+        updateButton.type = "button";
+
+        const deleteButton = createElement(
+            "button",
+            "blog-delete-button",
+            "Delete Blog"
+        );
+
+        deleteButton.type = "button";
+
+        actions.append(updateButton, deleteButton);
+
+        modal.append(header, body, actions);
+        overlay.appendChild(modal);
         document.body.appendChild(overlay);
 
         function closeModal() {
@@ -219,22 +261,33 @@ document.addEventListener("DOMContentLoaded", async () => {
             title,
             date,
             content,
-            closeButton
+            closeButton,
+            updateButton,
+            deleteButton,
+            closeModal
         };
     }
 
     const previewModal = createPreviewModal();
 
+    let selectedBlog = null;
+
     // Open blog preview.
     function openBlogPreview(blog) {
-        previewModal.category.textContent = blog.category || "Uncategorized";
-        previewModal.title.textContent = blog.title || "Untitled Blog";
+        selectedBlog = blog;
+
+        previewModal.category.textContent =
+            blog.category || "Uncategorized";
+
+        previewModal.title.textContent =
+            blog.title || "Untitled Blog";
+
         previewModal.date.textContent =
             `Published on ${formatDate(blog.created_at)}`;
 
-        previewModal.content.textContent = blog.content || "";
+        previewModal.content.textContent =
+            blog.content || "No content available.";
 
-        // Display image only inside the preview modal.
         if (blog.image_url) {
             previewModal.image.src = blog.image_url;
             previewModal.image.alt = blog.title || "Blog cover image";
@@ -246,10 +299,65 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         previewModal.overlay.classList.add("active");
         previewModal.overlay.setAttribute("aria-hidden", "false");
+
         document.body.classList.add("modal-open");
 
         previewModal.closeButton.focus();
     }
+
+    // Update button: navigate to Create Blog page.
+    previewModal.updateButton.addEventListener("click", () => {
+        if (!selectedBlog?.id) {
+            alert("Unable to identify this blog.");
+            return;
+        }
+
+        window.location.href =
+            `./create-blog.html?edit=${encodeURIComponent(selectedBlog.id)}`;
+    });
+
+    // Delete button: delete blog from database.
+    previewModal.deleteButton.addEventListener("click", async () => {
+        if (!selectedBlog?.id) {
+            alert("Unable to identify this blog.");
+            return;
+        }
+
+        const confirmed = window.confirm(
+            `Are you sure you want to delete "${selectedBlog.title}"? This action cannot be undone.`
+        );
+
+        if (!confirmed) return;
+
+        const blogId = selectedBlog.id;
+
+        previewModal.deleteButton.disabled = true;
+        previewModal.deleteButton.textContent = "Deleting...";
+
+        try {
+            await apiRequest(`${API_URL}/${encodeURIComponent(blogId)}`, {
+                method: "DELETE"
+            });
+
+            // Remove deleted blog from local data.
+            blogs = blogs.filter((blog) => blog.id !== blogId);
+
+            // Close preview and update dashboard.
+            previewModal.closeModal();
+            renderBlogs(blogs);
+
+            console.log("Blog deleted successfully:", blogId);
+
+        } catch (error) {
+            console.error("Delete blog error:", error);
+
+            alert(error.message || "Unable to delete blog.");
+
+        } finally {
+            previewModal.deleteButton.disabled = false;
+            previewModal.deleteButton.textContent = "Delete Blog";
+        }
+    });
 
     // Create clickable blog card.
     function createBlogCard(blog) {
@@ -257,6 +365,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         card.tabIndex = 0;
         card.setAttribute("role", "button");
+
         card.setAttribute(
             "aria-label",
             `Preview blog: ${blog.title || "Untitled Blog"}`
@@ -302,22 +411,16 @@ document.addEventListener("DOMContentLoaded", async () => {
             "Read blog"
         );
 
-        const arrow = createElement(
-            "span",
-            "blog-card-arrow",
-            "→"
-        );
+        const arrow = createElement("span", "blog-card-arrow", "→");
 
         footer.append(previewText, arrow);
 
         card.append(cardTop, title, content, footer);
 
-        // Mouse click.
         card.addEventListener("click", () => {
             openBlogPreview(blog);
         });
 
-        // Keyboard accessibility.
         card.addEventListener("keydown", (event) => {
             if (event.key === "Enter" || event.key === " ") {
                 event.preventDefault();
@@ -328,16 +431,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         return card;
     }
 
-    // Render recent blogs.
-    function renderBlogs(blogs) {
+    // Render latest 5 blogs.
+    function renderBlogs(blogList) {
         if (!recentBlogsContainer) return;
 
-        // Remove old blog cards without removing the empty state.
         recentBlogsContainer
             .querySelectorAll(".blog-card")
             .forEach((card) => card.remove());
 
-        if (!blogs.length) {
+        recentBlogsContainer
+            .querySelectorAll(".error-message")
+            .forEach((message) => message.remove());
+
+        if (!blogList.length) {
             if (emptyBlogsElement) {
                 emptyBlogsElement.hidden = false;
             }
@@ -349,18 +455,20 @@ document.addEventListener("DOMContentLoaded", async () => {
             emptyBlogsElement.hidden = true;
         }
 
-        // Show latest 5 blogs.
-        const recentBlogs = blogs.slice(0, 5);
+        const recentBlogs = [...blogList]
+            .sort((a, b) => {
+                return new Date(b.created_at) - new Date(a.created_at);
+            })
+            .slice(0, 5);
 
         recentBlogs.forEach((blog) => {
-            const card = createBlogCard(blog);
-            recentBlogsContainer.appendChild(card);
+            recentBlogsContainer.appendChild(createBlogCard(blog));
         });
     }
 
-    // Load blogs from Supabase through the backend.
+    // Load blogs.
     try {
-        const blogs = await fetchMyBlogs();
+        blogs = await fetchMyBlogs();
 
         renderBlogs(blogs);
 
@@ -381,10 +489,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         if (recentBlogsContainer) {
-            recentBlogsContainer
-                .querySelectorAll(".blog-card")
-                .forEach((card) => card.remove());
-
             if (emptyBlogsElement) {
                 emptyBlogsElement.hidden = true;
             }
