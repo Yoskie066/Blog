@@ -9,8 +9,9 @@
     <link rel="stylesheet" href="../css/sidebar.css">
     <link rel="stylesheet" href="../css/create-blog.css">
 
-    <script src="../js/sidebar.js" defer></script>
+    <script src="../js/auth.js" defer></script>
     <script src="../js/create-blog.js" defer></script>
+    <script src="../js/sidebar.js" defer></script>
 </head>
 
 <body data-active-page="create-blog">
@@ -45,15 +46,8 @@
                         Blog Title <span class="required">*</span>
                     </label>
 
-                    <input
-                        type="text"
-                        id="blog-title"
-                        name="title"
-                        placeholder="Enter your blog title"
-                        maxlength="120"
-                        autocomplete="off"
-                        required
-                    >
+                    <input type="text" id="blog-title" name="title" placeholder="Enter your blog title" maxlength="120"
+                        autocomplete="off" required>
 
                     <small id="title-counter" class="field-counter">0 / 120 characters</small>
                 </div>
@@ -89,13 +83,8 @@
                         Blog Content <span class="required">*</span>
                     </label>
 
-                    <textarea
-                        id="blog-content"
-                        name="content"
-                        rows="14"
-                        placeholder="Start writing your blog here..."
-                        required
-                    ></textarea>
+                    <textarea id="blog-content" name="content" rows="14" placeholder="Start writing your blog here..."
+                        required></textarea>
                 </div>
 
                 <!-- COVER IMAGE (file upload) -->
@@ -106,14 +95,9 @@
                     </span>
 
                     <!-- Hidden native file input -->
-                    <input
-                        type="file"
-                        id="blog-image"
-                        name="coverImage"
-                        accept="image/png, image/jpeg, image/jpg, image/gif, image/webp"
-                        class="hidden-file-input"
-                        hidden
-                    >
+                    <input type="file" id="blog-image" name="coverImage"
+                        accept="image/png, image/jpeg, image/jpg, image/gif, image/webp" class="hidden-file-input"
+                        hidden>
 
                     <!-- Custom dropzone UI -->
                     <label for="blog-image" class="file-dropzone" id="file-dropzone">
@@ -127,12 +111,8 @@
 
                     <div id="image-preview-container" class="image-preview-container" hidden>
                         <img id="image-preview" class="image-preview" alt="Cover image preview">
-                        <button
-                            type="button"
-                            id="remove-image"
-                            class="remove-image-btn"
-                            aria-label="Remove cover image"
-                        >
+                        <button type="button" id="remove-image" class="remove-image-btn"
+                            aria-label="Remove cover image">
                             ✕
                         </button>
                     </div>

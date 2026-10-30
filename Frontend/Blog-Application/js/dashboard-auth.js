@@ -1,47 +1,97 @@
+document.addEventListener("DOMContentLoaded", async () => {
 
-document.addEventListener("DOMContentLoaded", () => {
-    const token = sessionStorage.getItem("token");
+    const LOGIN_URL = "./login.html";
+
+    const token = sessionStorage.getItem("accessToken");
     const savedUser = sessionStorage.getItem("user");
 
-    console.log("Dashboard token exists:", !!token);
+    console.log("Dashboard access token exists:", !!token);
     console.log("Dashboard user:", savedUser);
 
-    if (!token || !savedUser) {
-        window.location.replace("login.html");
+    // Check if user information exists.
+    if (!savedUser) {
+        sessionStorage.removeItem("accessToken");
+        window.location.replace(LOGIN_URL);
         return;
     }
 
-    let user;
+    let currentUser;
 
     try {
-        user = JSON.parse(savedUser);
+        currentUser = JSON.parse(savedUser);
+
+        if (
+            !currentUser ||
+            typeof currentUser.email !== "string" ||
+            !currentUser.email.trim()
+        ) {
+            throw new Error("Invalid user session.");
+        }
+
     } catch (error) {
-        sessionStorage.removeItem("token");
+        console.error("Invalid user session:", error);
+
+        sessionStorage.removeItem("accessToken");
         sessionStorage.removeItem("user");
-        window.location.replace("login.html");
+
+        window.location.replace(LOGIN_URL);
         return;
     }
 
-    if (!user || !user.email) {
-        sessionStorage.removeItem("token");
-        sessionStorage.removeItem("user");
-        window.location.replace("login.html");
-        return;
+    // Refresh access token if missing.
+    if (!token) {
+        if (typeof window.refreshAccessToken === "function") {
+            const refreshed = await window.refreshAccessToken();
+
+            if (!refreshed) {
+                sessionStorage.removeItem("accessToken");
+                sessionStorage.removeItem("user");
+
+                window.location.replace(LOGIN_URL);
+                return;
+            }
+        } else {
+            console.error("refreshAccessToken() is unavailable.");
+
+            window.location.replace(LOGIN_URL);
+            return;
+        }
     }
 
+    // Display user email.
     const userNameElement = document.querySelector("#dashboard-user-name");
 
     if (userNameElement) {
-        userNameElement.textContent = user.email;
+        userNameElement.textContent = currentUser.email;
     }
 
+    // Logout.
     const logoutButton = document.querySelector("#logout-button");
 
     if (logoutButton) {
-        logoutButton.addEventListener("click", () => {
-            sessionStorage.removeItem("token");
-            sessionStorage.removeItem("user");
-            window.location.replace("login.html");
+        logoutButton.addEventListener("click", async () => {
+
+            logoutButton.disabled = true;
+
+            try {
+                if (typeof window.logout === "function") {
+                    await window.logout();
+                } else {
+                    sessionStorage.removeItem("accessToken");
+                    sessionStorage.removeItem("user");
+
+                    window.location.replace(LOGIN_URL);
+                }
+
+            } catch (error) {
+                console.error("Logout error:", error);
+
+                sessionStorage.removeItem("accessToken");
+                sessionStorage.removeItem("user");
+
+                window.location.replace(LOGIN_URL);
+            }
         });
     }
+
 });

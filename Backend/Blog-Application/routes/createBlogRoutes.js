@@ -19,8 +19,8 @@ function authenticateToken(req, res, next) {
         });
     }
 
-    if (!process.env.JWT_SECRET) {
-        console.error("JWT_SECRET is not configured.");
+    if (!process.env.JWT_ACCESS_SECRET) {
+        console.error("JWT_ACCESS_SECRET is not configured.");
 
         return res.status(500).json({
             success: false,
@@ -31,12 +31,15 @@ function authenticateToken(req, res, next) {
     const token = authHeader.slice("Bearer ".length);
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(
+            token,
+            process.env.JWT_ACCESS_SECRET
+        );
 
         if (
             !decoded ||
-            typeof decoded.email !== "string" ||
-            !decoded.email.trim()
+            typeof decoded.userId !== "string" ||
+            typeof decoded.email !== "string"
         ) {
             return res.status(401).json({
                 success: false,
@@ -45,12 +48,13 @@ function authenticateToken(req, res, next) {
         }
 
         req.user = {
-            id: decoded.id,
+            userId: decoded.userId,
             email: decoded.email.trim().toLowerCase()
         };
 
         next();
-    } catch {
+
+    } catch (error) {
         return res.status(401).json({
             success: false,
             message: "Your session is invalid or expired. Please log in again."
@@ -58,8 +62,13 @@ function authenticateToken(req, res, next) {
     }
 }
 
+// Create a blog.
 router.post("/", authenticateToken, createBlog);
+
+// Get all blogs owned by the logged-in user.
 router.get("/my", authenticateToken, getMyBlogs);
+
+// Get one blog owned by the logged-in user.
 router.get("/:id", authenticateToken, getBlogById);
 
 export default router;

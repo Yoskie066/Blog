@@ -1,5 +1,7 @@
-
 document.addEventListener("DOMContentLoaded", () => {
+    const API_URL = "http://127.0.0.1:3000/api/blogs";
+    const LOGIN_URL = "./login.html";
+
     const form = document.getElementById("create-blog-form");
 
     const titleInput = document.getElementById("blog-title");
@@ -29,7 +31,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let currentImageDataUrl = "";
 
-    // Check that required HTML elements exist.
     if (
         !form ||
         !titleInput ||
@@ -43,12 +44,12 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
     }
 
-    // Check the current login session.
-    const token = sessionStorage.getItem("token");
+    // Check login session.
     const savedUser = sessionStorage.getItem("user");
 
-    if (!token || !savedUser) {
-        window.location.replace("./login.html");
+    if (!savedUser) {
+        sessionStorage.removeItem("accessToken");
+        window.location.replace(LOGIN_URL);
         return;
     }
 
@@ -60,13 +61,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     } catch (error) {
         console.error("Invalid login session:", error);
-        sessionStorage.removeItem("token");
+
+        sessionStorage.removeItem("accessToken");
         sessionStorage.removeItem("user");
-        window.location.replace("./login.html");
+
+        window.location.replace(LOGIN_URL);
         return;
     }
 
-    // Display messages.
     function showMessage(message, type = "error") {
         messageElement.textContent = message;
         messageElement.className = `form-message ${type}`;
@@ -79,7 +81,6 @@ document.addEventListener("DOMContentLoaded", () => {
         messageElement.hidden = true;
     }
 
-    // Update title character counter.
     function updateTitleCounter() {
         if (titleCounter) {
             titleCounter.textContent =
@@ -90,7 +91,6 @@ document.addEventListener("DOMContentLoaded", () => {
     titleInput.addEventListener("input", updateTitleCounter);
     updateTitleCounter();
 
-    // Show the selected cover image.
     function setImagePreview(dataUrl) {
         currentImageDataUrl = dataUrl;
 
@@ -106,7 +106,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // Clear the selected cover image.
     function clearImage() {
         currentImageDataUrl = "";
         imageInput.value = "";
@@ -122,29 +121,21 @@ document.addEventListener("DOMContentLoaded", () => {
         fileDropzone?.classList.remove("has-image");
 
         if (fileDropzoneTitle) {
-            fileDropzoneTitle.textContent =
-                "Click to upload a cover image";
+            fileDropzoneTitle.textContent = "Click to upload a cover image";
         }
     }
 
-    // Validate and read an image file.
     function handleImageFile(file) {
         if (!file) return;
 
         if (!IMAGE_ALLOWED_TYPES.includes(file.type)) {
-            showMessage(
-                "Upload a PNG, JPG, GIF, or WebP image.",
-                "error"
-            );
+            showMessage("Upload a PNG, JPG, GIF, or WebP image.");
             imageInput.value = "";
             return;
         }
 
         if (file.size > IMAGE_MAX_SIZE) {
-            showMessage(
-                "The cover image must be 2MB or smaller.",
-                "error"
-            );
+            showMessage("The cover image must be 2MB or smaller.");
             imageInput.value = "";
             return;
         }
@@ -153,7 +144,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         reader.onload = () => {
             if (typeof reader.result !== "string") {
-                showMessage("Unable to process this image.", "error");
+                showMessage("Unable to process this image.");
                 return;
             }
 
@@ -162,10 +153,7 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         reader.onerror = () => {
-            showMessage(
-                "Unable to read the image. Please try again.",
-                "error"
-            );
+            showMessage("Unable to read the image. Please try again.");
             imageInput.value = "";
         };
 
@@ -180,11 +168,11 @@ document.addEventListener("DOMContentLoaded", () => {
     removeImageBtn?.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
+
         clearImage();
         hideMessage();
     });
 
-    // Support drag and drop if the dropzone exists.
     if (fileDropzone) {
         ["dragenter", "dragover"].forEach((eventName) => {
             fileDropzone.addEventListener(eventName, (event) => {
@@ -212,7 +200,59 @@ document.addEventListener("DOMContentLoaded", () => {
     form.addEventListener("input", hideMessage);
     form.addEventListener("change", hideMessage);
 
-    // Submit the blog to the backend API.
+    async function sendBlogRequest(blogData) {
+        let token = sessionStorage.getItem("accessToken");
+
+        if (!token) {
+            const refreshed = await window.refreshAccessToken?.();
+
+            if (!refreshed) {
+                throw new Error("Your session has expired. Please log in again.");
+            }
+
+            token = sessionStorage.getItem("accessToken");
+        }
+
+        let response = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+            },
+            credentials: "include",
+            body: JSON.stringify(blogData)
+        });
+
+        // Retry once if the access token expired.
+        if (response.status === 401) {
+            const refreshed = await window.refreshAccessToken?.();
+
+            if (!refreshed) {
+                throw new Error("Your session has expired. Please log in again.");
+            }
+
+            token = sessionStorage.getItem("accessToken");
+
+            response = await fetch(API_URL, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                credentials: "include",
+                body: JSON.stringify(blogData)
+            });
+        }
+
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok || !data.success) {
+            throw new Error(data.message || "Failed to create the blog.");
+        }
+
+        return data;
+    }
+
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
         hideMessage();
@@ -222,21 +262,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const title = titleInput.value.trim();
         const category = categoryInput.value.trim();
         const content = contentInput.value.trim();
-        const imageUrl = currentImageDataUrl;
 
         if (!title || !category || !content) {
-            showMessage(
-                "Please enter a title, select a category, and write your blog.",
-                "error"
-            );
+            showMessage("Please enter a title, select a category, and write your blog.");
             return;
         }
 
         if (title.length > TITLE_MAX) {
-            showMessage(
-                `The title must not exceed ${TITLE_MAX} characters.`,
-                "error"
-            );
+            showMessage(`The title must not exceed ${TITLE_MAX} characters.`);
             return;
         }
 
@@ -244,45 +277,12 @@ document.addEventListener("DOMContentLoaded", () => {
         submitButton.textContent = "Saving...";
 
         try {
-            const currentToken = sessionStorage.getItem("token");
-
-            if (!currentToken) {
-                sessionStorage.removeItem("user");
-                window.location.replace("./login.html");
-                return;
-            }
-
-            const response = await fetch(
-                "http://localhost:3000/api/blogs",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${currentToken}`
-                    },
-                    body: JSON.stringify({
-                        title,
-                        category,
-                        content,
-                        imageUrl
-                    })
-                }
-            );
-
-            const data = await response.json().catch(() => ({}));
-
-            if (response.status === 401) {
-                sessionStorage.removeItem("token");
-                sessionStorage.removeItem("user");
-                window.location.replace("./login.html");
-                return;
-            }
-
-            if (!response.ok || !data.success) {
-                throw new Error(
-                    data.message || "Failed to create the blog."
-                );
-            }
+            await sendBlogRequest({
+                title,
+                category,
+                content,
+                imageUrl: currentImageDataUrl
+            });
 
             showMessage(
                 "Blog created successfully! Redirecting to Dashboard...",
@@ -294,14 +294,14 @@ document.addEventListener("DOMContentLoaded", () => {
             window.setTimeout(() => {
                 window.location.href = "./dashboard.html";
             }, 800);
+
         } catch (error) {
             console.error("Create blog error:", error);
 
             showMessage(
                 error instanceof Error
                     ? error.message
-                    : "Unable to connect to the server. Please try again.",
-                "error"
+                    : "Unable to connect to the server. Please try again."
             );
 
             submitButton.disabled = false;

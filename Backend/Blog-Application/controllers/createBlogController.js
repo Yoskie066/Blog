@@ -1,7 +1,6 @@
+import { supabase } from "../config/supabase.js";
 
-const blogs = [];
-
-export function createBlog(req, res) {
+export async function createBlog(req, res) {
     try {
         const { title, category, content, imageUrl = "" } = req.body;
 
@@ -26,15 +25,18 @@ export function createBlog(req, res) {
             });
         }
 
-        if (imageUrl !== "") {
+        if (typeof imageUrl !== "string") {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid image."
+            });
+        }
+
+        if (imageUrl) {
             const imagePattern =
                 /^data:image\/(png|jpeg|jpg|gif|webp);base64,[A-Za-z0-9+/]+=*$/;
 
-            if (
-                typeof imageUrl !== "string" ||
-                !imagePattern.test(imageUrl) ||
-                imageUrl.length > 3_000_000
-            ) {
+            if (!imagePattern.test(imageUrl) || imageUrl.length > 3_000_000) {
                 return res.status(400).json({
                     success: false,
                     message: "Invalid image or image is too large."
@@ -42,27 +44,35 @@ export function createBlog(req, res) {
             }
         }
 
-        const now = new Date().toISOString();
+        // Insert blog into Supabase.
+        const { data: blog, error } = await supabase
+            .from("blogs")
+            .insert({
+                user_id: req.user.userId,
+                title: title.trim(),
+                category: category.trim(),
+                content: content.trim(),
+                image_url: imageUrl,
+                status: "published"
+            })
+            .select()
+            .single();
 
-        const blog = {
-            id: crypto.randomUUID(),
-            title: title.trim(),
-            category: category.trim(),
-            content: content.trim(),
-            imageUrl,
-            email: req.user.email,
-            status: "published",
-            createdAt: now,
-            updatedAt: now
-        };
+        if (error) {
+            console.error("Supabase create blog error:", error);
 
-        blogs.unshift(blog);
+            return res.status(500).json({
+                success: false,
+                message: "Unable to save the blog."
+            });
+        }
 
         return res.status(201).json({
             success: true,
             message: "Blog created successfully.",
             blog
         });
+
     } catch (error) {
         console.error("Create blog error:", error);
 
@@ -73,17 +83,29 @@ export function createBlog(req, res) {
     }
 }
 
-export function getMyBlogs(req, res) {
+export async function getMyBlogs(req, res) {
     try {
-        const userBlogs = blogs.filter(
-            (blog) => blog.email === req.user.email
-        );
+        const { data: blogs, error } = await supabase
+            .from("blogs")
+            .select("*")
+            .eq("user_id", req.user.userId)
+            .order("created_at", { ascending: false });
+
+        if (error) {
+            console.error("Supabase get blogs error:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: "Unable to retrieve your blogs."
+            });
+        }
 
         return res.status(200).json({
             success: true,
-            count: userBlogs.length,
-            blogs: userBlogs
+            count: blogs.length,
+            blogs
         });
+
     } catch (error) {
         console.error("Get blogs error:", error);
 
@@ -94,9 +116,23 @@ export function getMyBlogs(req, res) {
     }
 }
 
-export function getBlogById(req, res) {
+export async function getBlogById(req, res) {
     try {
-        const blog = blogs.find((item) => item.id === req.params.id);
+        const { data: blog, error } = await supabase
+            .from("blogs")
+            .select("*")
+            .eq("id", req.params.id)
+            .eq("user_id", req.user.userId)
+            .maybeSingle();
+
+        if (error) {
+            console.error("Supabase get blog by ID error:", error);
+
+            return res.status(500).json({
+                success: false,
+                message: "Unable to retrieve the blog."
+            });
+        }
 
         if (!blog) {
             return res.status(404).json({
@@ -105,17 +141,11 @@ export function getBlogById(req, res) {
             });
         }
 
-        if (blog.email !== req.user.email) {
-            return res.status(403).json({
-                success: false,
-                message: "You do not have permission to view this blog."
-            });
-        }
-
         return res.status(200).json({
             success: true,
             blog
         });
+
     } catch (error) {
         console.error("Get blog error:", error);
 
