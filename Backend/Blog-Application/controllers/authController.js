@@ -1,4 +1,3 @@
-
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
@@ -7,7 +6,7 @@ import {
     findUserByEmail,
     findUserById,
     createUser
-} from "../models/userModel.js";
+} from "../models/UserModel.js";
 
 import {
     createRefreshToken,
