@@ -1,0 +1,31 @@
+services:
+  backend:
+    build: .
+    image: blogspace-backend:latest
+    container_name: blogspace-container
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  backend-dev:
+    build: .
+    container_name: blogspace-dev
+    env_file:
+      - .env
+    ports:
+      - "3001:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev -- --legacy-watch
+
+  frontend:
+    build:
+      context: ../../Frontend/Blog-Application
+      dockerfile: Dockerfile
+    container_name: blogspace-frontend
+    ports:
+      - "8080:80"
+    restart: unless-stopped
