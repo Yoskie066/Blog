@@ -241,7 +241,7 @@ export const register = async (req, res) => {
 
         return res.status(201).json({
             success: true,
-            message: "Registration successful. You can now log in.",
+            message: "Registration successful!",
             user: newUser
         });
 
