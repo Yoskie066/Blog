@@ -1,5 +1,11 @@
+/* =====================================
+   BlogSpace Create / Update Blog
+   CRUD Operations
+===================================== */
+
 document.addEventListener("DOMContentLoaded", async () => {
-    const API_URL = "http://127.0.0.1:3000/api/blogs";
+
+    const API_URL = "https://blog-snmt.onrender.com/api/blogs";
     const LOGIN_URL = "./login.html";
 
     const form = document.getElementById("create-blog-form");
@@ -8,19 +14,36 @@ document.addEventListener("DOMContentLoaded", async () => {
     const categoryInput = document.getElementById("blog-category");
     const contentInput = document.getElementById("blog-content");
     const imageInput = document.getElementById("blog-image");
+
     const titleCounter = document.getElementById("title-counter");
 
     const fileDropzone = document.getElementById("file-dropzone");
     const fileDropzoneTitle = document.getElementById("file-dropzone-title");
-    const imagePreviewContainer = document.getElementById("image-preview-container");
-    const imagePreview = document.getElementById("image-preview");
-    const removeImageBtn = document.getElementById("remove-image");
 
-    const submitButton = document.getElementById("submit-button");
-    const messageElement = document.getElementById("form-message");
+    const imagePreviewContainer =
+        document.getElementById("image-preview-container");
 
-    const pageTitle = document.querySelector(".page-header h1");
-    const pageDescription = document.querySelector(".page-description");
+    const imagePreview =
+        document.getElementById("image-preview");
+
+    const removeImageBtn =
+        document.getElementById("remove-image");
+
+    const submitButton =
+        document.getElementById("submit-button");
+
+    const messageElement =
+        document.getElementById("form-message");
+
+    const pageTitle =
+        document.querySelector(".page-header h1");
+
+    const pageDescription =
+        document.querySelector(".page-description");
+
+    // =====================================
+    // CONFIGURATION
+    // =====================================
 
     const TITLE_MAX = 120;
     const IMAGE_MAX_SIZE = 2 * 1024 * 1024;
@@ -32,12 +55,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         "image/webp"
     ];
 
-    // Check whether the page is in edit mode.
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(
+        window.location.search
+    );
+
     const editBlogId = urlParams.get("edit");
 
+    const isEditMode = Boolean(editBlogId);
+
     let currentImageDataUrl = "";
-    let isEditMode = Boolean(editBlogId);
+
+    // =====================================
+    // CHECK REQUIRED ELEMENTS
+    // =====================================
 
     if (
         !form ||
@@ -48,15 +78,22 @@ document.addEventListener("DOMContentLoaded", async () => {
         !submitButton ||
         !messageElement
     ) {
-        console.error("Create Blog form is missing required HTML elements.");
+        console.error(
+            "Create Blog form is missing required HTML elements."
+        );
+
         return;
     }
 
-    // Check login session.
+    // =====================================
+    // CHECK USER SESSION
+    // =====================================
+
     const savedUser = sessionStorage.getItem("user");
 
     if (!savedUser) {
         sessionStorage.removeItem("accessToken");
+
         window.location.replace(LOGIN_URL);
         return;
     }
@@ -71,6 +108,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         ) {
             throw new Error("Invalid user session.");
         }
+
     } catch (error) {
         console.error("Invalid login session:", error);
 
@@ -81,7 +119,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
-    // Show form message.
+    // =====================================
+    // FORM MESSAGES
+    // =====================================
+
     function showMessage(message, type = "error") {
         messageElement.textContent = message;
         messageElement.className = `form-message ${type}`;
@@ -94,7 +135,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         messageElement.hidden = true;
     }
 
-    // Update title character counter.
+    // =====================================
+    // TITLE CHARACTER COUNTER
+    // =====================================
+
     function updateTitleCounter() {
         if (titleCounter) {
             titleCounter.textContent =
@@ -102,15 +146,23 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    titleInput.addEventListener("input", updateTitleCounter);
+    titleInput.addEventListener(
+        "input",
+        updateTitleCounter
+    );
+
     updateTitleCounter();
 
-    // Get valid access token.
+    // =====================================
+    // ACCESS TOKEN
+    // =====================================
+
     async function getAccessToken() {
         let token = sessionStorage.getItem("accessToken");
 
         if (!token) {
-            const refreshed = await window.refreshAccessToken?.();
+            const refreshed =
+                await window.refreshAccessToken?.();
 
             if (!refreshed) {
                 throw new Error(
@@ -122,32 +174,52 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         if (!token) {
-            throw new Error("Unable to obtain an access token.");
+            throw new Error(
+                "Unable to obtain an access token."
+            );
         }
 
         return token;
     }
 
-    // Reusable authenticated API request.
+    // =====================================
+    // AUTHENTICATED API REQUEST
+    // =====================================
+
     async function apiRequest(url, options = {}) {
         let token = await getAccessToken();
 
-        const makeRequest = () => fetch(url, {
-            ...options,
-            headers: {
-                ...(options.body ? {
-                    "Content-Type": "application/json"
-                } : {}),
-                ...options.headers,
-                "Authorization": `Bearer ${token}`
-            },
-            credentials: "include"
-        });
+        const makeRequest = () => {
+            const headers = new Headers(options.headers || {});
+
+            if (
+                options.body &&
+                !(options.body instanceof FormData) &&
+                !headers.has("Content-Type")
+            ) {
+                headers.set(
+                    "Content-Type",
+                    "application/json"
+                );
+            }
+
+            headers.set(
+                "Authorization",
+                `Bearer ${token}`
+            );
+
+            return fetch(url, {
+                ...options,
+                headers,
+                credentials: "include"
+            });
+        };
 
         let response = await makeRequest();
 
         if (response.status === 401) {
-            const refreshed = await window.refreshAccessToken?.();
+            const refreshed =
+                await window.refreshAccessToken?.();
 
             if (!refreshed) {
                 throw new Error(
@@ -158,7 +230,9 @@ document.addEventListener("DOMContentLoaded", async () => {
             token = sessionStorage.getItem("accessToken");
 
             if (!token) {
-                throw new Error("Unable to refresh your session.");
+                throw new Error(
+                    "Unable to refresh your session."
+                );
             }
 
             response = await makeRequest();
@@ -168,14 +242,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         if (!response.ok || data.success === false) {
             throw new Error(
-                data.message || "Something went wrong. Please try again."
+                data.message ||
+                "Something went wrong. Please try again."
             );
         }
 
         return data;
     }
 
-    // Display selected image.
+    // =====================================
+    // IMAGE PREVIEW
+    // =====================================
+
     function setImagePreview(imageUrl) {
         currentImageDataUrl = imageUrl;
 
@@ -187,11 +265,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         fileDropzone?.classList.add("has-image");
 
         if (fileDropzoneTitle) {
-            fileDropzoneTitle.textContent = "Change cover image";
+            fileDropzoneTitle.textContent =
+                "Change cover image";
         }
     }
 
-    // Clear selected image.
+    // =====================================
+    // CLEAR IMAGE
+    // =====================================
+
     function clearImage() {
         currentImageDataUrl = "";
         imageInput.value = "";
@@ -207,22 +289,32 @@ document.addEventListener("DOMContentLoaded", async () => {
         fileDropzone?.classList.remove("has-image");
 
         if (fileDropzoneTitle) {
-            fileDropzoneTitle.textContent = "Click to upload a cover image";
+            fileDropzoneTitle.textContent =
+                "Click to upload a cover image";
         }
     }
 
-    // Validate and process image.
+    // =====================================
+    // IMAGE VALIDATION
+    // =====================================
+
     function handleImageFile(file) {
         if (!file) return;
 
         if (!IMAGE_ALLOWED_TYPES.includes(file.type)) {
-            showMessage("Upload a PNG, JPG, GIF, or WebP image.");
+            showMessage(
+                "Upload a PNG, JPG, GIF, or WebP image."
+            );
+
             imageInput.value = "";
             return;
         }
 
         if (file.size > IMAGE_MAX_SIZE) {
-            showMessage("The cover image must be 2MB or smaller.");
+            showMessage(
+                "The cover image must be 2MB or smaller."
+            );
+
             imageInput.value = "";
             return;
         }
@@ -231,7 +323,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         reader.onload = () => {
             if (typeof reader.result !== "string") {
-                showMessage("Unable to process this image.");
+                showMessage(
+                    "Unable to process this image."
+                );
+
                 return;
             }
 
@@ -240,7 +335,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         };
 
         reader.onerror = () => {
-            showMessage("Unable to read the image. Please try again.");
+            showMessage(
+                "Unable to read the image. Please try again."
+            );
+
             imageInput.value = "";
         };
 
@@ -249,8 +347,13 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     imageInput.addEventListener("change", (event) => {
         const file = event.target.files?.[0];
+
         handleImageFile(file);
     });
+
+    // =====================================
+    // REMOVE IMAGE
+    // =====================================
 
     removeImageBtn?.addEventListener("click", (event) => {
         event.preventDefault();
@@ -260,20 +363,31 @@ document.addEventListener("DOMContentLoaded", async () => {
         hideMessage();
     });
 
-    // Drag and drop image.
+    // =====================================
+    // DRAG AND DROP IMAGE
+    // =====================================
+
     if (fileDropzone) {
         ["dragenter", "dragover"].forEach((eventName) => {
-            fileDropzone.addEventListener(eventName, (event) => {
-                event.preventDefault();
-                fileDropzone.classList.add("dragover");
-            });
+            fileDropzone.addEventListener(
+                eventName,
+                (event) => {
+                    event.preventDefault();
+
+                    fileDropzone.classList.add("dragover");
+                }
+            );
         });
 
         ["dragleave", "drop"].forEach((eventName) => {
-            fileDropzone.addEventListener(eventName, (event) => {
-                event.preventDefault();
-                fileDropzone.classList.remove("dragover");
-            });
+            fileDropzone.addEventListener(
+                eventName,
+                (event) => {
+                    event.preventDefault();
+
+                    fileDropzone.classList.remove("dragover");
+                }
+            );
         });
 
         fileDropzone.addEventListener("drop", (event) => {
@@ -285,10 +399,17 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
+    // =====================================
+    // HIDE MESSAGE WHEN FORM CHANGES
+    // =====================================
+
     form.addEventListener("input", hideMessage);
     form.addEventListener("change", hideMessage);
 
-    // Load existing blog for editing.
+    // =====================================
+    // LOAD BLOG FOR EDITING
+    // =====================================
+
     async function loadBlogForEditing() {
         if (!editBlogId) return;
 
@@ -300,7 +421,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                 `${API_URL}/${encodeURIComponent(editBlogId)}`
             );
 
-            const blog = data.blog || data.data?.blog || data.data;
+            const blog =
+                data.blog ||
+                data.data?.blog ||
+                data.data;
 
             if (!blog || !blog.id) {
                 throw new Error("Blog not found.");
@@ -316,7 +440,6 @@ document.addEventListener("DOMContentLoaded", async () => {
                 setImagePreview(blog.image_url);
             }
 
-            // Change page heading and button label.
             if (pageTitle) {
                 pageTitle.textContent = "Update Blog";
             }
@@ -328,7 +451,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             submitButton.textContent = "Update Blog";
 
-            console.log("Blog loaded for editing:", blog.id);
+            console.log(
+                "Blog loaded for editing:",
+                blog.id
+            );
 
         } catch (error) {
             console.error("Load blog error:", error);
@@ -346,9 +472,13 @@ document.addEventListener("DOMContentLoaded", async () => {
         submitButton.disabled = false;
     }
 
-    // Submit create or update request.
+    // =====================================
+    // SUBMIT CREATE OR UPDATE
+    // =====================================
+
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
+
         hideMessage();
 
         if (submitButton.disabled) return;
@@ -361,6 +491,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             showMessage(
                 "Please enter a title, select a category, and write your blog."
             );
+
             return;
         }
 
@@ -368,10 +499,12 @@ document.addEventListener("DOMContentLoaded", async () => {
             showMessage(
                 `The title must not exceed ${TITLE_MAX} characters.`
             );
+
             return;
         }
 
         submitButton.disabled = true;
+
         submitButton.textContent = isEditMode
             ? "Updating..."
             : "Saving...";
@@ -387,7 +520,8 @@ document.addEventListener("DOMContentLoaded", async () => {
             let data;
 
             if (isEditMode) {
-                // UPDATE existing blog.
+                // UPDATE BLOG
+
                 data = await apiRequest(
                     `${API_URL}/${encodeURIComponent(editBlogId)}`,
                     {
@@ -396,7 +530,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                     }
                 );
 
-                console.log("Blog updated successfully:", data);
+                console.log(
+                    "Blog updated successfully:",
+                    data
+                );
 
                 showMessage(
                     "Blog updated successfully! Redirecting to Dashboard...",
@@ -404,13 +541,17 @@ document.addEventListener("DOMContentLoaded", async () => {
                 );
 
             } else {
-                // CREATE new blog.
+                // CREATE BLOG
+
                 data = await apiRequest(API_URL, {
                     method: "POST",
                     body: JSON.stringify(blogData)
                 });
 
-                console.log("Blog created successfully:", data);
+                console.log(
+                    "Blog created successfully:",
+                    data
+                );
 
                 showMessage(
                     "Blog created successfully! Redirecting to Dashboard...",
@@ -444,13 +585,17 @@ document.addEventListener("DOMContentLoaded", async () => {
             );
 
             submitButton.disabled = false;
+
             submitButton.textContent = isEditMode
                 ? "Update Blog"
                 : "Save Blog";
         }
     });
 
-    // Initialize page.
+    // =====================================
+    // INITIALIZE PAGE
+    // =====================================
+
     if (isEditMode) {
         if (pageTitle) {
             pageTitle.textContent = "Update Blog";
@@ -472,4 +617,5 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         submitButton.textContent = "Save Blog";
     }
+
 });
